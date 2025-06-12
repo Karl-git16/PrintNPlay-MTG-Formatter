@@ -6,7 +6,7 @@ Card Formatter for Print &amp; Play Games for Proxies
 - Have the Card images from MPCFILL
 - Have the decklist from MPCFILL
 
-#How to Use
+# How to Use
 1. download all the files
 2. download dependencies using requirements.txt
 3. take card images from MPCFILL and put in folder called Cards
