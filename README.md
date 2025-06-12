@@ -14,4 +14,5 @@ Card Formatter for Print &amp; Play Games for Proxies
 5. take decklist from MPCFILL and put in same directory as files
 6. run preprocess.py
 <pre><code>python preprocess.py</code></pre>
-7. open photoshop: go to file -> scripts -> browse -> Cards.jsx 
+7. open photoshop:
+- go to file -> scripts -> browse -> Cards.jsx 
