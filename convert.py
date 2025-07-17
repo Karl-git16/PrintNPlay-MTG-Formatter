@@ -28,3 +28,5 @@ def convert(input_folder, output_folder, target_size, rotation_angle):
             rotated_img.save(output_path, dpi=(300, 300))
 
             print(f"Resized, rotated, and saved: {output_path}")
+
+#convert(input_folder, output_folder, target_size, rotation_angle)
