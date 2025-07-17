@@ -7,16 +7,18 @@ if (typeof String.prototype.trim !== 'function') {
     };
 }
 
-// === CONFIGURATION ===
-var templatePath = "C:/Users/Karmi/Downloads/Poker Cards (2-5x3-5) 18 per sheet.psd";
-// === CONFIGURATION FOR FRONTS ===
-var imageFolder = new Folder("C:/Users/Karmi/Downloads/VSCode/MTG/Cards_resized");
-var outputFolder = new Folder("C:/Users/Karmi/Downloads/VSCode/MTG/output_sheets");
-var cardListFile = File("C:/Users/Karmi/Downloads/VSCode/MTG/cardlist.txt");
+var scriptFile = new File($.fileName);
+var scriptDir = scriptFile.path;
+
+var templatePath = scriptDir + "/Poker Cards (2-5x3-5) 18 per sheet.psd";
+var imageFolder = new Folder(scriptDir + "/Cards_resized");
+var outputFolder = new Folder(scriptDir + "/output_sheets");
+var cardListFile = File(scriptDir + "/cardlist.txt");
+
 // === CONFIGURATION FOR BACKS ===
-var imageFolderBacks = new Folder("C:/Users/Karmi/Downloads/VSCode/MTG/Cardbacks_resized");
-var outputFolderBacks = new Folder("C:/Users/Karmi/Downloads/VSCode/MTG/output_sheets/output_sheets_backs");
-var cardListFileBacks = File("C:/Users/Karmi/Downloads/VSCode/MTG/cardlistback.txt");
+var imageFolderBacks = new Folder(scriptDir + "/Cardbacks_resized");
+var outputFolderBacks = new Folder(scriptDir + "/output_sheets/output_sheets_backs");
+var cardListFileBacks = File(scriptDir + "/cardlistback.txt");
 
 function Sheets(templatePath, imageFolder, outputFolder, cardListFile) {
     if (!outputFolder.exists) {
@@ -24,7 +26,7 @@ function Sheets(templatePath, imageFolder, outputFolder, cardListFile) {
     }
 
     // === GRID POSITIONS ===
-    var xCoords = [118, 1243, 2365];
+    var xCoords = [118, 1243, 2369];
     var yCoords = [229, 1054, 1880, 2710, 3532, 4361];
 
     var gridPositions = [];
@@ -126,9 +128,20 @@ function Sheets(templatePath, imageFolder, outputFolder, cardListFile) {
         templateDoc.close(SaveOptions.DONOTSAVECHANGES);
         sheetCount++;
     }
+    //alert("Finished placing " + cardNames.length + " cards into " + (sheetCount - 1) + " sheet(s).");
 
-    alert("Finished placing " + cardNames.length + " cards into " + (sheetCount - 1) + " sheet(s).");
 }
 
 Sheets(templatePath, imageFolder, outputFolder, cardListFile);
 Sheets(templatePath, imageFolderBacks, outputFolderBacks, cardListFileBacks);
+// Close all open documents
+while (app.documents.length > 0) {
+    app.activeDocument.close(SaveOptions.DONOTSAVECHANGES);
+}
+
+// Optional: create a completion flag file
+var doneFile = new File(scriptDir + "/done.flag");
+doneFile.open("w");
+doneFile.writeln("done");
+doneFile.close();
+
