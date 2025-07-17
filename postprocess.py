@@ -3,7 +3,7 @@ from PIL import Image
 
 # === Configuration ===
 FOLDER = "output_sheets" 
-FOLDERBACK = "output_sheets\output_sheets_backs"  
+FOLDERBACK = "output_sheets/output_sheets_backs"  
 MAX_SIZE_MB = 25
 MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024
 MIN_QUALITY = 10  # Don't go below this
@@ -29,6 +29,8 @@ def compress_image(path, max_size_bytes):
     print(f"WARNING: Could not compress '{path}' below {MAX_SIZE_MB}MB")
 
 def process_folder(folder):
+    if folder is None or not os.path.exists(folder):
+        os.makedirs(folder, exist_ok=True)
     for filename in os.listdir(folder):
         if filename.lower().endswith(('.jpg', '.jpeg')):
             path = os.path.join(folder, filename)
@@ -40,5 +42,5 @@ def process_folder(folder):
                 print(f"OK: {filename} ({size/1024/1024:.2f} MB)")
 
 
-process_folder(FOLDER)
-process_folder(FOLDERBACK)
+#process_folder(FOLDER)
+#process_folder(FOLDERBACK)
