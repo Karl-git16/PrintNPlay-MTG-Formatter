@@ -14,3 +14,8 @@ Card Formatter for Print &amp; Play Games for Proxies
 3. run
 <pre><code>pip python main.py</code></pre>
 
+# How to Use without application
+1. make folder, call it whatever
+2. place application in folder
+3. run application
+
