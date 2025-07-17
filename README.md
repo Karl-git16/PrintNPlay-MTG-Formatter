@@ -5,15 +5,12 @@ Card Formatter for Print &amp; Play Games for Proxies
 - Have photoshop
 - Have the Card images from MPCFILL
 - Have the decklist from MPCFILL
+- download your webdriver(application currently only works with chrome)
 
-# How to Use
+# How to Use without application
 1. download all the files and go to directory
 2. download dependencies using requirements.txt
 <pre><code>pip install -r requirements.txt</code></pre>
-3. Rename your cardback to Card Back
-4. take card images from MPCFILL and put in folder called Cards
-5. take decklist from MPCFILL and put in same directory as files
-6. run preprocess.py
-<pre><code>python preprocess.py</code></pre>
-7. open photoshop:
-- go to file -> scripts -> browse -> Cards.jsx 
+3. run
+<pre><code>pip python main.py</code></pre>
+
