@@ -1,6 +1,7 @@
 import scrython
 import re
 import math
+from rename import sanitize_filename
 
 # === CONFIGURE ===
 input_file = "decklist.txt"
@@ -20,7 +21,8 @@ def cardlist(input_file, output_file, back_output_file):
             if not line:
                 continue
 
-            match = re.match(r"(\d+)[xX]\s+([^{]+)", line)
+            match = re.match(r"(\d+)[xX]?\s+(.+)", line)
+
             if not match:
                 print(f"Skipping malformed line: {line}")
                 continue
@@ -92,14 +94,17 @@ def cardlist(input_file, output_file, back_output_file):
                     all_backs.append(back_grid[row][col])
 
     # Step 4: Write outputs
-    with open(output_file, 'w', encoding='utf-8') as f_out, open(back_output_file, 'w', encoding='utf-8') as b_out:
+    with open(output_file, 'w', encoding='utf-8') as f_out, open(back_output_file, 'w', encoding='utf-8') as b_out: 
         for front, back in zip(all_fronts, all_backs):
-            f_out.write(front + "\n")
-            b_out.write(back + "\n")
+            sanitized_front = sanitize_filename(front, front)
+            sanitized_back = sanitize_filename(back, back)
+            f_out.write(sanitized_front + "\n")
+            b_out.write(sanitized_back + "\n")
+
 
     print(f"{total_cards} cards processed into {total_pages} page(s).")
     print(f"Fronts written to {output_file}")
     print(f"Backs written to {back_output_file}")
 
 #run the function
-cardlist(input_file, output_file, back_output_file)
+#cardlist(input_file, output_file, back_output_file)
