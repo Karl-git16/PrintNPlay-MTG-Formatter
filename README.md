@@ -22,14 +22,13 @@ Card Formatter for Print &amp; Play Games for Proxies
 
 # Run Through of Program
 1. you'll be prompted between automatic and manual
-- manual -- just needs decklist
-- automatic -- needs decklist and card files from MPCFILL
-     I. delete your cardback file
+- manual: just needs decklist
+- automatic: needs decklist and card files from MPCFILL(delete cardback file)
 2. input what is prompted(decklist and card files)
 3. press start processing
-   a.Creates files and folders
-   b.Opens photoshop and makes sheets
+- Creates files and folders
+- Opens photoshop and makes sheets
 5. input user and pass of Print & Play Games
-   a. will open a browser and automatically place order for you and add to cart
+- will open a browser and automatically place order for you and add to cart
 6. Exit program
 
