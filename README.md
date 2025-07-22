@@ -16,6 +16,20 @@ Card Formatter for Print &amp; Play Games for Proxies
 
 # How to Use without application
 1. make folder, call it whatever
-2. place application in folder
-3. run application
+2. download main.exe
+4. place main.exe in folder
+5. run application
+
+# Run Through of Program
+1. you'll be prompted between automatic and manual
+   a. manual -- just needs decklist
+   b. automatic -- needs decklist and card files from MPCFILL
+     I. delete your cardback file
+2. input what is prompted(decklist and card files)
+3. press start processing
+   a.Creates files and folders
+   b.Opens photoshop and makes sheets
+5. input user and pass of Print & Play Games
+   a. will open a browser and automatically place order for you and add to cart
+6. Exit program
 
