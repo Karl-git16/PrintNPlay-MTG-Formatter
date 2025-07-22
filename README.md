@@ -22,8 +22,8 @@ Card Formatter for Print &amp; Play Games for Proxies
 
 # Run Through of Program
 1. you'll be prompted between automatic and manual
-   a. manual -- just needs decklist
-   b. automatic -- needs decklist and card files from MPCFILL
+- manual -- just needs decklist
+- automatic -- needs decklist and card files from MPCFILL
      I. delete your cardback file
 2. input what is prompted(decklist and card files)
 3. press start processing
