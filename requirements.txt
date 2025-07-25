@@ -1,0 +1,7 @@
+selenium
+pillow
+tkinter
+shutil
+scrython
+pymupdf
+fitz
