@@ -62,8 +62,8 @@ def automate_browser(output_sheets, output_sheets_backs, username, password):
         for i in range(1, sheet_count + 1):
 
             # Wait for upload fields
-            front_path = os.path.join(output_sheets, f'Sheet{i}.jpg')
-            back_path = os.path.join(output_sheets_backs, f'Sheet{i}.jpg')
+            front_path = os.path.abspath(os.path.join(output_sheets, f'Sheet{i}.jpg'))
+            back_path = os.path.abspath(os.path.join(output_sheets_backs, f'Sheet{i}.jpg'))
 
             if not os.path.exists(front_path) or not os.path.exists(back_path):
                 print(f"❌ Missing Sheet {i}: {front_path} or {back_path}")
@@ -73,6 +73,7 @@ def automate_browser(output_sheets, output_sheets_backs, username, password):
 
             # Upload front
             print("⏳ Waiting for Front upload input...")
+            time.sleep(2)
             front_input = WebDriverWait(driver, 60).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "input[data-title^='File Upload FRONT']"))
             )
@@ -87,6 +88,7 @@ def automate_browser(output_sheets, output_sheets_backs, username, password):
             back_input = WebDriverWait(driver, 60).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "input[data-title^='File Upload Back']"))
             )
+            time.sleep(2)
             back_input.send_keys(back_path)        
             print("Back upload Done.")
             wait_until_input_enabled(driver, "input[id^='quantity_']")
@@ -109,6 +111,6 @@ def automate_browser(output_sheets, output_sheets_backs, username, password):
 # Setup
 script_dir = os.path.dirname(os.path.abspath(__file__))
 output_sheets = os.path.join(script_dir, 'output_sheets')
-output_sheets_backs = os.path.join(output_sheets, 'output_sheets_backs')
+output_sheets_backs = os.path.join(script_dir, 'output_sheets_backs')
 
 #automate_browser(output_sheets, output_sheets_backs, "Karmichael.realina@gmail.com", "CoolCat123!!")
