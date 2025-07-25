@@ -15,6 +15,8 @@ from postprocess import process_folder
 from scryfallImages import get_scryfall_image
 from webDriver import automate_browser
 from PIL import Image, ImageTk, ImageSequence
+from tkinter import messagebox
+from sheetMaker import create_sheet_with_images
 
 #------------------------ Backend Configuration ------------------------#
 input_list = "decklist.txt"
@@ -25,7 +27,7 @@ folder_path = r'Cards'
 folder_resized = r'Cards_resized'
 folder_resized_back = r'Cardbacks_resized'
 FOLDER = "output_sheets"
-FOLDERBACK = r"output_sheets\output_sheets_backs"
+FOLDERBACK = r"output_sheets_backs"
 
 target_size = (810, 1115)
 rotation_angle = 270
@@ -38,22 +40,6 @@ def find_resource(path):
     return os.path.abspath(path)
 folder_path_back = find_resource("Cardbacks")
 
-def find_photoshop():
-    possible_paths = [
-        r"C:\Program Files\Adobe\Adobe Photoshop 2025\Photoshop.exe",
-        r"C:\Program Files\Adobe\Adobe Photoshop 2024\Photoshop.exe",
-        r"C:\Program Files\Adobe\Adobe Photoshop 2023\Photoshop.exe",
-        r"C:\Program Files\Adobe\Adobe Photoshop 2022\Photoshop.exe",
-        r"C:\Program Files (x86)\Adobe\Adobe Photoshop\Photoshop.exe"
-    ]
-    
-    for path in possible_paths:
-        if os.path.exists(path):
-            print(f"✅ Found Photoshop at: {path}")
-            return path
-    
-    print("❌ Photoshop not found in default locations.")
-    return None
 
 def process_cards(type):
     #For automated mode
@@ -72,27 +58,8 @@ def process_cards(type):
     convert(folder_path, folder_resized, target_size, rotation_angle)
     convert(folder_path_back, folder_resized_back, target_size, rotation_angle_back)
 
-    photoshop_path = find_photoshop()
-    script_path = find_resource("Cards.jsx")
-
-    # Launch Photoshop script
-    subprocess.Popen([photoshop_path, script_path])
-
-    # Wait for the flag
-    flag_path = os.path.join(os.path.dirname(script_path), "done.flag")
-    timeout = 300  # max wait time in seconds
-    waited = 0
-
-    while not os.path.exists(flag_path) and waited < timeout:
-        time.sleep(2)
-        waited += 2
-
-    if os.path.exists(flag_path):
-        print("✅ Photoshop script completed. Terminating Photoshop.")
-        subprocess.run(["taskkill", "/IM", "Photoshop.exe", "/F"])
-        os.remove(flag_path)  # cleanup
-    else:
-        print("⚠️ Timeout waiting for Photoshop script to complete.")
+    create_sheet_with_images(folder_resized, FOLDER, output_list)
+    create_sheet_with_images(folder_resized_back, FOLDERBACK, output_list_back)
 
     process_folder(FOLDER)
     process_folder(FOLDERBACK)
@@ -110,11 +77,8 @@ def cleanup_and_exit(app):
 
         # Delete all files in 'Cards'
         if os.path.exists("Cards"):
-            for file in os.listdir("Cards"):
-                path = os.path.join("Cards", file)
-                if os.path.isfile(path):
-                    os.remove(path)
-                    print(f"🗑️ Deleted Cards/{file}")
+            if os.path.exists("Cards"):
+                shutil.rmtree("Cards")
 
         # Delete everything in 'Cardbacks' except "Card Back.png"
         if os.path.exists("Cardbacks"):
@@ -128,19 +92,11 @@ def cleanup_and_exit(app):
         # Delete all files in 'Cards_resized' and 'Cardbacks_resized'
         for folder in ["Cards_resized", "Cardbacks_resized"]:
             if os.path.exists(folder):
-                for file in os.listdir(folder):
-                    path = os.path.join(folder, file)
-                    if os.path.isfile(path):
-                        os.remove(path)
-                        print(f"🗑️ Deleted {folder}/{file}")
+                shutil.rmtree(folder)
         # Delete all files in 'output_sheets' and 'output_sheets_backs'
-        for folder in ["output_sheets", "output_sheets/output_sheets_backs"]:
+        for folder in ["output_sheets", "output_sheets_backs"]:
             if os.path.exists(folder):
-                for file in os.listdir(folder):
-                    path = os.path.join(folder, file)
-                    if os.path.isfile(path):
-                        os.remove(path)
-                        print(f"🗑️ Deleted {folder}/{file}")
+                shutil.rmtree(folder)
 
         print("✅ Cleanup complete. Exiting application.")
     except Exception as e:
@@ -172,20 +128,38 @@ class App(tk.Tk):
         frame = self.frames[frame_class]
         frame.tkraise()
 
+    from tkinter import messagebox
+
     def select_files(self):
         file_paths = filedialog.askopenfilenames(
             title="Select Card Images",
             filetypes=[("Image Files", "*.jpg *.png")]
         )
-        if file_paths:
-            target_folder = "Cards"
-            os.makedirs(target_folder, exist_ok=True)
-            print("Selected files:")
-            for path in file_paths:
-                filename = os.path.basename(path)
-                destination = os.path.join(target_folder, filename)
-                shutil.move(path, destination)
-                print(f"✅ Moved to: {destination}")
+
+        if not file_paths:
+            return  # User cancelled
+
+        invalid_files = []
+        valid_extensions = (".jpg", ".jpeg", ".png")
+
+        target_folder = "Cards"
+        os.makedirs(target_folder, exist_ok=True)
+
+        print("Selected files:")
+        for path in file_paths:
+            if not path.lower().endswith(valid_extensions):
+                invalid_files.append(os.path.basename(path))
+                continue
+
+            filename = os.path.basename(path)
+            destination = os.path.join(target_folder, filename)
+            shutil.move(path, destination)
+            print(f"✅ Moved to: {destination}")
+
+        if invalid_files:
+            bad_list = "\n".join(invalid_files)
+            messagebox.showerror("Invalid Files", f"❌ The following files are not .jpg or .png:\n{bad_list}")
+
 
     def change_type(self, type):
         self.type = type
@@ -194,10 +168,13 @@ class App(tk.Tk):
 class StartScreen(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="black")
-        tk.Label(self, text="MTG Pr oxy Automation", font=("Arial", 32), bg="black", fg="white").pack(pady=60)
+        tk.Label(self, text="MTG Proxy Automation", font=("Arial", 32), bg="black", fg="white").pack(pady=60)
         tk.Button(self, text="Click to start", command=lambda: controller.show_frame(infoScreen),
                   bg="green", fg="white", font=("Arial", 14)).pack(pady=20)
-        
+        exit_button = tk.Button(self, text="Exit", command=lambda: cleanup_and_exit(controller),
+                  bg="red", fg="white", font=("Arial", 14))
+        exit_button.place(relx=1.0, rely=1.0, anchor="se", x=-10, y=-10)  # offset from top-right corner
+
 class infoScreen(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="black")
@@ -205,22 +182,23 @@ class infoScreen(tk.Frame):
                  bg="black", fg="white").pack(pady=20)
 
         rules = [
-            "1.) You must have Photoshop installed.",
-            "2.) If you choose Manual (MPCFILL), do NOT include the card back image.",
-            "3.) Automated mode pulls images from Scryfall — no fancy art or alters.",
-            "4.) You must have a Print & Play account.",
-            "5.) Recommended to put the app in a folder, because the app will create folders.",
-            "6.) If the print is wrong... unlucky :\\"
+            "1.) If you choose Manual (MPCFILL), do NOT include the card back image.",
+            "2.) Automated mode pulls images from Scryfall — no fancy art or alters.",
+            "3.) You must have a Print & Play account.",
+            "4.) Recommended to put the app in a folder, because the app will create folders to store cards.",
+            "5.) If the print is wrong... unlucky :\\"
         ]
 
         for rule in rules:
             tk.Label(self, text=rule, font=("Arial", 14), bg="black", fg="white", anchor="w", justify="left").pack(pady=3)
 
-        tk.Button(self, text="Back", command=lambda: controller.show_frame(StartScreen),
-                  bg="orange", fg="black", font=("Arial", 12)).pack(pady=15)
-
         tk.Button(self, text="Next", command=lambda: controller.show_frame(FirstScreen),
                   bg="green", fg="white", font=("Arial", 12)).pack()
+        tk.Button(self, text="Back", command=lambda: controller.show_frame(StartScreen),
+                  bg="orange", fg="black", font=("Arial", 12)).pack(pady=15)
+        exit_button = tk.Button(self, text="Exit", command=lambda: cleanup_and_exit(controller),
+                  bg="red", fg="white", font=("Arial", 14))
+        exit_button.place(relx=1.0, rely=1.0, anchor="se", x=-10, y=-10)  # offset from top-right corner
 
         
 class FirstScreen(tk.Frame):
@@ -242,6 +220,9 @@ class FirstScreen(tk.Frame):
 
         tk.Button(self, text="Back", command=lambda: controller.show_frame(infoScreen),
                   bg="orange", fg="black", font=("Arial", 12)).pack(pady=10)
+        exit_button = tk.Button(self, text="Exit", command=lambda: cleanup_and_exit(controller),
+                  bg="red", fg="white", font=("Arial", 14))
+        exit_button.place(relx=1.0, rely=1.0, anchor="se", x=-10, y=-10)  # offset from top-right corner
 
 class ManualScreen(tk.Frame):
     def __init__(self, parent, controller):
@@ -257,6 +238,9 @@ class ManualScreen(tk.Frame):
 
         tk.Button(self, text="Back", command=lambda: controller.show_frame(FirstScreen),
                   bg="orange", fg="black", font=("Arial", 12)).pack(pady=10)
+        exit_button = tk.Button(self, text="Exit", command=lambda: cleanup_and_exit(controller),
+                  bg="red", fg="white", font=("Arial", 14))
+        exit_button.place(relx=1.0, rely=1.0, anchor="se", x=-10, y=-10)  # offset from top-right corner
 
     def submit_decklist(self):
         decklist = self.decklist_box.get("1.0", tk.END).strip()
@@ -282,6 +266,9 @@ class ManualScreen2(tk.Frame):
 
         tk.Button(self, text="Back", command=lambda: controller.show_frame(ManualScreen),
                   bg="orange", fg="black", font=("Arial", 12)).pack(pady=10)
+        exit_button = tk.Button(self, text="Exit", command=lambda: cleanup_and_exit(controller),
+                  bg="red", fg="white", font=("Arial", 14))
+        exit_button.place(relx=1.0, rely=1.0, anchor="se", x=-10, y=-10)  # offset from top-right corner
 
 class AutomatedScreen(tk.Frame):
     def __init__(self, parent, controller):
@@ -297,6 +284,9 @@ class AutomatedScreen(tk.Frame):
 
         tk.Button(self, text="Back", command=lambda: controller.show_frame(FirstScreen),
                   bg="orange", fg="black", font=("Arial", 12)).pack(pady=10)
+        exit_button = tk.Button(self, text="Exit", command=lambda: cleanup_and_exit(controller),
+                  bg="red", fg="white", font=("Arial", 14))
+        exit_button.place(relx=1.0, rely=1.0, anchor="se", x=-10, y=-10)  # offset from top-right corner
         
     def submit_decklist(self):
         decklist = self.decklist_box.get("1.0", tk.END).strip()
@@ -318,11 +308,14 @@ class StartProcessingScreen(tk.Frame):
         tk.Button(self, text="Start Processing",
                   command=lambda: self.start_processing(controller),
                   bg="green", fg="white", font=("Arial", 12)).pack(pady=10)
+        exit_button = tk.Button(self, text="Exit", command=lambda: cleanup_and_exit(controller),
+                  bg="red", fg="white", font=("Arial", 14))
+        exit_button.place(relx=1.0, rely=1.0, anchor="se", x=-10, y=-10)  # offset from top-right corner
 
     def start_processing(self, controller):
         # Show "Processing..." label
         if self.status_label is None:
-            self.status_label = tk.Label(self, text="Processing...", font=("Arial", 14), fg="white", bg="black")
+            self.status_label = tk.Label(self, text="Processing...Please Wait", font=("Arial", 14), fg="white", bg="black")
             self.status_label.pack(pady=10)
 
         self.after(100, lambda: self.run_processing(controller))
@@ -352,9 +345,9 @@ class orderScreen(tk.Frame):
                   bg="blue", fg="white", font=("Arial", 12)).pack(pady=10)
         tk.Button(self, text="Back", command=lambda: controller.show_frame(StartProcessingScreen),
                   bg="orange", fg="black", font=("Arial", 12)).pack(pady=10)
-        tk.Button(self, text="Exit", command=lambda: cleanup_and_exit(controller),
-                bg="red", fg="white", font=("Arial", 12)).pack(pady=10)
-
+        exit_button = tk.Button(self, text="Exit", command=lambda: cleanup_and_exit(controller),
+                  bg="red", fg="white", font=("Arial", 14))
+        exit_button.place(relx=1.0, rely=1.0, anchor="se", x=-10, y=-10)  # offset from top-right corner
 
 
 #------------------------ Launch App ------------------------#
