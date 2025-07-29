@@ -261,7 +261,7 @@ class ManualScreen2(tk.Frame):
                   bg="white", font=("Arial", 12)).pack(pady=20)
 
         tk.Button(self, text="Start Processing",
-                  command=process_cards,
+                  command=lambda: controller.show_frame(StartProcessingScreen),
                   bg="green", fg="white", font=("Arial", 12)).pack(pady=10)
 
         tk.Button(self, text="Back", command=lambda: controller.show_frame(ManualScreen),
