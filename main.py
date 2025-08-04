@@ -17,6 +17,7 @@ from webDriver import automate_browser
 from PIL import Image, ImageTk, ImageSequence
 from tkinter import messagebox
 from sheetMaker import create_sheet_with_images
+from tkinter import messagebox
 
 #------------------------ Backend Configuration ------------------------#
 input_list = "decklist.txt"
@@ -42,29 +43,37 @@ folder_path_back = find_resource("Cardbacks")
 
 
 def process_cards(type):
-    #For automated mode
-    if(type == "automated"):
-        print("Processing cards in automated mode...")
-        # Read each line from decklist.txt and call get_scryfall_image
-        with open("decklist.txt", "r", encoding="utf-8") as file:
-            for line in file:
-                line = line.strip()
-                if line:  # skip empty lines
-                    get_scryfall_image(line, "Cards")
+    try:
+        if type == "automated":
+            print("Processing cards in automated mode...")
+            with open("decklist.txt", "r", encoding="utf-8") as file:
+                for line in file:
+                    line = line.strip()
+                    if line:
+                        get_scryfall_image(line, "Cards")
 
-    cardlist(input_list, output_list, output_list_back)
-    rename_files(folder_path)
-    move_files(folder_path, folder_path_back, output_list_back)
-    convert(folder_path, folder_resized, target_size, rotation_angle)
-    convert(folder_path_back, folder_resized_back, target_size, rotation_angle_back)
+        cardlist(input_list, output_list, output_list_back)
+        rename_files(folder_path)
+        move_files(folder_path, folder_path_back, output_list_back)
+        convert(folder_path, folder_resized, target_size, rotation_angle)
+        convert(folder_path_back, folder_resized_back, target_size, rotation_angle_back)
+        create_sheet_with_images(folder_resized, FOLDER, output_list)
+        create_sheet_with_images(folder_resized_back, FOLDERBACK, output_list_back)
+        process_folder(FOLDER)
+        process_folder(FOLDERBACK)
+    except Exception as e:
+        raise RuntimeError(f"Unexpected error: {str(e)}") from e
 
-    create_sheet_with_images(folder_resized, FOLDER, output_list)
-    create_sheet_with_images(folder_resized_back, FOLDERBACK, output_list_back)
+def show_error(message, controller=None, previous_frame_class=None):
+    root = tk.Tk()
+    root.withdraw()  # Hide the main window
+    messagebox.showerror("Error", message)
+    root.destroy()
 
-    process_folder(FOLDER)
-    process_folder(FOLDERBACK)
+    if controller and previous_frame_class:
+        controller.show_frame(previous_frame_class)
 
-#------------------------ Tkinter Frontend ------------------------#
+
 def cleanup_and_exit(app):
     import glob
 
@@ -103,7 +112,8 @@ def cleanup_and_exit(app):
         print(f"⚠️ Error during cleanup: {e}")
 
     app.quit()
-
+    
+#------------------------ Tkinter Frontend ------------------------#
 
 class App(tk.Tk):
     def __init__(self):
@@ -228,8 +238,8 @@ class ManualScreen(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="black")
         tk.Label(self, text="Paste Your Decklist Below", font=("Arial", 18), bg="black", fg="white").pack(pady=20)
-
-        self.decklist_box = tk.Text(self, width=50, height=10, font=("Arial", 12))
+        tk.Label(self, text="On MPCFILL go Download, then Decklist, then copy the list", font=("Arial", 14), bg="black", fg="white").pack(pady=10)
+        self.decklist_box = tk.Text(self, width=50, height=8, font=("Arial", 12))
         self.decklist_box.pack(pady=10)
 
         tk.Button(self, text="Submit Decklist",
@@ -249,7 +259,7 @@ class ManualScreen(tk.Frame):
                 f.write(decklist)
             print("✅ Decklist saved to decklist.txt")
         else:
-            print("⚠️ Decklist is empty.")
+            messagebox.showwarning("Empty Decklist", "⚠️ Decklist is empty. Please enter your cards.")
 
 class ManualScreen2(tk.Frame):
     def __init__(self, parent, controller):
@@ -274,7 +284,7 @@ class AutomatedScreen(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="black")
         tk.Label(self, text="Paste Your Decklist Below", font=("Arial", 18), bg="black", fg="white").pack(pady=20)
-
+        tk.Label(self, text="On Moxfield go to More, then Export, then Copy for Moxfield", font=("Arial", 14), bg="black", fg="white").pack(pady=10)
         self.decklist_box = tk.Text(self, width=50, height=10, font=("Arial", 12))
         self.decklist_box.pack(pady=10)
 
@@ -295,7 +305,7 @@ class AutomatedScreen(tk.Frame):
                 f.write(decklist)
             print("✅ Decklist saved to decklist.txt")
         else:
-            print("⚠️ Decklist is empty.")
+            messagebox.showwarning("Empty Decklist", "⚠️ Decklist is empty. Please enter your cards.")
         
 class StartProcessingScreen(tk.Frame):
     def __init__(self, parent, controller):
@@ -321,14 +331,18 @@ class StartProcessingScreen(tk.Frame):
         self.after(100, lambda: self.run_processing(controller))
 
     def run_processing(self, controller):
-        process_cards(controller.type)
+        try:
+            process_cards(controller.type)
+            if self.status_label:
+                self.status_label.destroy()
+                self.status_label = None
+            controller.show_frame(orderScreen)
+        except RuntimeError as e:
+            if self.status_label:
+                self.status_label.destroy()
+                self.status_label = None
+            show_error(str(e), controller, AutomatedScreen if controller.type == "automated" else ManualScreen2)
 
-        # Remove the status label
-        if self.status_label:
-            self.status_label.destroy()
-            self.status_label = None
-
-        controller.show_frame(orderScreen)
 
 
 class orderScreen(tk.Frame):
