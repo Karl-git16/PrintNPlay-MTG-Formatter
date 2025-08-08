@@ -5,3 +5,4 @@ shutil
 scrython
 pymupdf
 fitz
+numpy
