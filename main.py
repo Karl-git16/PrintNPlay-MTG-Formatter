@@ -44,6 +44,7 @@ folder_path_back = find_resource("Cardbacks")
 
 def process_cards(type):
     try:
+        cardlist(input_list, output_list, output_list_back)
         if type == "automated":
             print("Processing cards in automated mode...")
             with open("decklist.txt", "r", encoding="utf-8") as file:
@@ -52,7 +53,6 @@ def process_cards(type):
                     if line:
                         get_scryfall_image(line, "Cards")
 
-        cardlist(input_list, output_list, output_list_back)
         rename_files(folder_path)
         move_files(folder_path, folder_path_back, output_list_back)
         convert(folder_path, folder_resized, target_size, rotation_angle)
@@ -344,17 +344,24 @@ class StartProcessingScreen(tk.Frame):
             show_error(str(e), controller, AutomatedScreen if controller.type == "automated" else ManualScreen2)
 
 
-
 class orderScreen(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="black")
+        tk.Label(self, text="Select Card Type(Standard Gloss Recommended)", font=("Arial", 18), bg="black", fg="white").pack(pady=30)
+        self.card_type= tk.StringVar(value="Standard Gloss 285gsm: $3.46")  # default value
+        card_type_options = ["Standard Gloss 285gsm: $3.46", "Plastic Paper 244gsm: $7.75", "Gloss Premium Black Corse 310gsm: $5.52", "Heavy Gloss 350gsm: $5.06"]  
+        dropdown = tk.OptionMenu(self, self.card_type, *card_type_options)
+        dropdown.config(font=("Arial", 12))
+        dropdown.pack(pady=5)
+
         tk.Label(self, text="Enter Username and Password", font=("Arial", 18), bg="black", fg="white").pack(pady=20)
         self.username_entry = tk.Entry(self, font=("Arial", 14))
         self.username_entry.pack(pady=10)
         self.password_entry = tk.Entry(self, show='*', font=("Arial", 14))
         self.password_entry.pack(pady=10)
+
         tk.Button(self, text="Submit",
-                  command=lambda: [automate_browser(FOLDER, FOLDERBACK, self.username_entry.get(), self.password_entry.get()),
+                  command=lambda: [automate_browser(FOLDER, FOLDERBACK, self.card_type.get(), self.username_entry.get(), self.password_entry.get()),
                                    controller.show_frame(StartScreen)],
                   bg="blue", fg="white", font=("Arial", 12)).pack(pady=10)
         tk.Button(self, text="Back", command=lambda: controller.show_frame(StartProcessingScreen),
