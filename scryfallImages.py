@@ -36,20 +36,19 @@ def get_scryfall_image(name, folderName):
         # Open image and ensure it's RGBA
         img = Image.open(BytesIO(response.content)).convert("RGBA")
 
-        # Get pixel data
-        pixels = img.getdata()
+        # Convert to NumPy array and fix transparency
+        img_np = np.array(img)
+        transparent_mask = img_np[:, :, 3] < 220
+        img_np[transparent_mask] = [0, 0, 0, 255]
+        img = Image.fromarray(img_np, "RGBA")
 
-        # Replace partially transparent pixels with black
-        new_pixels = []
-        for pixel in pixels:
-            r, g, b, a = pixel
-            if a < 255:  # transparent or semi-transparent
-                new_pixels.append((0, 0, 0, 255))  # fully black
-            else:
-                new_pixels.append((r, g, b, 255))  # keep as-is
+        # Flatten onto black background (removes any edge glow)
+        img_rgb = Image.new("RGB", img.size, (0, 0, 0))
+        img_rgb.paste(img, mask=img.split()[3])
 
-        # Apply modified pixels
-        img.putdata(new_pixels)
+        # Now add your black border
+        border_size = 38
+        img_with_border = ImageOps.expand(img_rgb, border=border_size, fill='black')
 
         # Now convert to RGB and add border
         img_rgb = img.convert("RGB")
@@ -71,4 +70,5 @@ def get_scryfall_image(name, folderName):
 
 # Example usage
 #get_scryfall_image("1 Training Center (CMM) 434", "Cards")
+
 
