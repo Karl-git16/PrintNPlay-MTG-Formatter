@@ -21,14 +21,15 @@ def cardlist(input_file, output_file, back_output_file):
             if not line:
                 continue
 
-            match = re.match(r"(\d+)[xX]?\s+(.+)", line)
+            match = re.match(r"(\d+)[xX]?\s+(.+?)(?:\s+\([A-Z0-9]+\)\s+\d+)?$", line)
 
             if not match:
                 print(f"Skipping malformed line: {line}")
                 continue
 
             count = int(match.group(1))
-            name = match.group(2).strip().replace("'", "")
+            raw_name = match.group(2).strip()
+            name = raw_name.split("//")[0].strip().replace("'", "")
 
             if "//" in name:
                 name = name.split("//", 1)[0].strip()
@@ -108,3 +109,4 @@ def cardlist(input_file, output_file, back_output_file):
 
 #run the function
 #cardlist(input_file, output_file, back_output_file)
+
