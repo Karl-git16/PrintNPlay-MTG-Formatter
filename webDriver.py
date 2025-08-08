@@ -17,7 +17,7 @@ def wait_until_input_enabled(driver, selector, timeout=30):
     )
     print(f"✅ Input #{selector} is now enabled.")
 
-def automate_browser(output_sheets, output_sheets_backs, username, password):
+def automate_browser(output_sheets, output_sheets_backs, printType, username, password):
     if not os.path.exists(output_sheets):
         print(f"❌ Output folder '{output_sheets}' does not exist.")
         return
@@ -47,8 +47,13 @@ def automate_browser(output_sheets, output_sheets_backs, username, password):
     time.sleep(3)
 
     # Select dropdowns
+    printings = {"Standard Gloss 285gsm: $3.46": "gloss",
+                 "Plastic Paper 244gsm: $7.75": "plastic-paper-waterproof",
+                 "Gloss Premium Black Corse 310gsm: $5.52": "gloss-premium-black-core",
+                 "Heavy Gloss 350gsm: $5.06": "heavy-gloss-non-cored-350gsm"}
+    
     Select(driver.find_element(By.ID, "pa_print")).select_by_value("print-double-sided")
-    Select(driver.find_element(By.ID, "pa_paper-stock")).select_by_value("gloss")
+    Select(driver.find_element(By.ID, "pa_paper-stock")).select_by_value(printings[printType])
     print("✅ Selected print options.")
     wait_until_input_enabled(driver, "input[id^='quantity_']")
     time.sleep(5)
