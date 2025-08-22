@@ -8,24 +8,70 @@ from selenium.webdriver.common.by import By
 import os
 import time
 
-def wait_until_input_enabled(driver, selector, timeout=30):
+def wait_until_input_enabled(driver, selector, timeout=20):
     element = WebDriverWait(driver, timeout).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, selector))
     )
     WebDriverWait(driver, timeout).until(
         lambda d: not element.get_attribute("disabled")
     )
-    print(f"✅ Input #{selector} is now enabled.")
+    print(f"Input #{selector} is now enabled.")
+
+def wait_for_upload_complete(driver, prefix, timeout=20):
+    # prefix examples: "wcufuploadedfile_11-" (front), "wcufuploadedfile_77-" (back)
+    WebDriverWait(driver, timeout).until(
+        EC.visibility_of_element_located(
+            (By.CSS_SELECTOR, f"button.wcuf_delete_button[data-id^='{prefix}']")
+        )
+    )
+def upload_with_retry(driver, input_selector, file_path, delete_prefix, max_retries=3, timeout=20):
+    """
+    Uploads a file and waits for the site's delete button to confirm completion.
+    Retries if upload fails to complete within `timeout`.
+    """
+    for attempt in range(1, max_retries + 1):
+        print(f"Attempt {attempt}: uploading {os.path.basename(file_path)}...")
+
+        # Scroll into view & upload
+        file_input = WebDriverWait(driver, 60).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, input_selector))
+        )
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", file_input)
+        file_input.send_keys(file_path)
+
+        try:
+            # Wait for delete button to appear
+            WebDriverWait(driver, timeout).until(
+                EC.visibility_of_element_located(
+                    (By.CSS_SELECTOR, f"button.wcuf_delete_button[data-id^='{delete_prefix}']")
+                )
+            )
+            print(f"Upload complete for {os.path.basename(file_path)}.")
+            return True  # success
+        except:
+            print(f"Upload timeout for {os.path.basename(file_path)}. Retrying...")
+
+            # Try deleting partially uploaded file
+            try:
+                delete_button = driver.find_element(By.CSS_SELECTOR, f"button.wcuf_delete_button[data-id^='{delete_prefix}']")
+                driver.execute_script("arguments[0].click();", delete_button)
+                print("Deleted failed upload.")
+                time.sleep(2)
+            except:
+                print("No delete button found — skipping delete step.")
+
+    print(f"Failed to upload {os.path.basename(file_path)} after {max_retries} attempts.")
+    return False
 
 def automate_browser(output_sheets, output_sheets_backs, printType, username, password):
     if not os.path.exists(output_sheets):
-        print(f"❌ Output folder '{output_sheets}' does not exist.")
+        print(f"Output folder '{output_sheets}' does not exist.")
         return
     if not os.path.exists(output_sheets_backs):
-        print(f"❌ Output folder '{output_sheets_backs}' does not exist.")
+        print(f"Output folder '{output_sheets_backs}' does not exist.")
         return
 
-    print("✅ Output folders found. Starting browser automation...")
+    print("Output folders found. Starting browser automation...")
     # Chrome options
     options = Options()
     options.add_argument("--incognito")
@@ -54,7 +100,7 @@ def automate_browser(output_sheets, output_sheets_backs, printType, username, pa
     
     Select(driver.find_element(By.ID, "pa_print")).select_by_value("print-double-sided")
     Select(driver.find_element(By.ID, "pa_paper-stock")).select_by_value(printings[printType])
-    print("✅ Selected print options.")
+    print("Selected print options.")
     wait_until_input_enabled(driver, "input[id^='quantity_']")
     time.sleep(5)
 
@@ -66,43 +112,26 @@ def automate_browser(output_sheets, output_sheets_backs, printType, username, pa
     try:
         for i in range(1, sheet_count + 1):
 
-            # Wait for upload fields
-            front_path = os.path.abspath(os.path.join(output_sheets, f'Sheet{i}.jpg'))
-            back_path = os.path.abspath(os.path.join(output_sheets_backs, f'Sheet{i}.jpg'))
+            front_path = os.path.abspath(os.path.join(output_sheets, f"Sheet{i}.jpg"))
+            back_path  = os.path.abspath(os.path.join(output_sheets_backs, f"Sheet{i}.jpg"))
 
             if not os.path.exists(front_path) or not os.path.exists(back_path):
-                print(f"❌ Missing Sheet {i}: {front_path} or {back_path}")
+                print(f"Missing Sheet {i} — skipping.")
                 continue
 
-            print(f"📤 Uploading Sheet {i}...")
+            print(f"===== Uploading Sheet {i} =====")
 
-            # Upload front
-            print("⏳ Waiting for Front upload input...")
-            time.sleep(2)
-            front_input = WebDriverWait(driver, 60).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "input[data-title^='File Upload FRONT']"))
-            )
-            front_input.send_keys(front_path)        
-            wait_until_input_enabled(driver, "input[id^='quantity_']")
-            print("Front upload Done.")
-            time.sleep(2)
+            if not upload_with_retry(driver, "input[data-title^='File Upload FRONT']", front_path, "wcufuploadedfile_11-"):
+                continue  # skip this sheet if front fails
 
+            if not upload_with_retry(driver, "input[data-title^='File Upload Back']", back_path, "wcufuploadedfile_77-"):
+                continue  # skip this sheet if back fails
 
-            # Upload back
-            print("⏳ Waiting for back upload input...")
-            back_input = WebDriverWait(driver, 60).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "input[data-title^='File Upload Back']"))
-            )
-            time.sleep(2)
-            back_input.send_keys(back_path)        
-            print("Back upload Done.")
-            wait_until_input_enabled(driver, "input[id^='quantity_']")
-            time.sleep(2)
-            
             # Add to cart
-            driver.find_element(By.CSS_SELECTOR, "button.single_add_to_cart_button").click()
-            print(f"✅ Sheet {i} added to cart.")
-            time.sleep(5)
+            WebDriverWait(driver, 30).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "button.single_add_to_cart_button"))
+            ).click()
+            print(f"Sheet {i} added to cart.")
     finally:
         if driver:
             try:
@@ -111,7 +140,7 @@ def automate_browser(output_sheets, output_sheets_backs, printType, username, pa
                 time.sleep(10)
             finally:
                 driver.quit()
-                print("🛑 Browser closed.")
+                print("Browser closed.")
     
 # Setup
 script_dir = os.path.dirname(os.path.abspath(__file__))
