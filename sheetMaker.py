@@ -9,7 +9,7 @@ cardlist_file = "cardlist.txt"
 
 # Create output directory if it doesn't exist
 
-def create_sheet_with_images(input_folder, output_folder, cardlist_file, template_pdf="template.pdf"):
+def create_sheet_with_images(input_folder, output_folder, cardlist_file, template_pdf):
     os.makedirs(output_folder, exist_ok=True)
     # Define grid positions (3x6 = 18 cards)
     x0_list = [28, 298, 568]
@@ -49,11 +49,12 @@ def create_sheet_with_images(input_folder, output_folder, cardlist_file, templat
             for ext in extensions:
                 test_path = os.path.join(input_folder, card_name + ext)
                 if os.path.exists(test_path):
+                    print(f"Found image for {card_name}: {test_path}")
                     image_path = test_path
                     break
 
             if not image_path:
-                print(f"❌ Image not found for: {card_name}")
+                print(f"Image not found for: {card_name}")
                 card_index += 1
                 continue
 
@@ -61,7 +62,7 @@ def create_sheet_with_images(input_folder, output_folder, cardlist_file, templat
             x0, x1, y0, y1 = grid_boxes[box_index]
             rect = fitz.Rect(x0, y0, x1, y1)
             page.insert_image(rect, filename=image_path)
-            print(f"✅ Sheet{sheet_count}: Inserted {card_name} at {rect}")
+            print(f"Sheet{sheet_count}: Inserted {card_name} at {rect}")
             card_index += 1
 
         # Save and export sheet as JPG
@@ -74,5 +75,5 @@ def create_sheet_with_images(input_folder, output_folder, cardlist_file, templat
 
         sheet_count += 1
 
-#create_sheet_with_images(input_folder, output_folder, cardlist_file)
+#create_sheet_with_images(input_folder, output_folder, cardlist_file, "template.pdf")
 #print("✅ All sheets created successfully.")
